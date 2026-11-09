@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-body: "Figtree", ui-sans-serif, system-ui, sans-serif;
+
+  --color-blush: #ffd1e3;
+  --color-rose: #f78fbb;
+  --color-lavender: #d9c8ff;
+  --color-violet: #9b7ad8;
+  --color-plum: #3b2466;
+  --color-cream: #fff6ea;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: #241446;
+    color: var(--color-cream);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Visible on both the dark twilight and the light dream backgrounds. */
+  :focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 7px rgba(59, 36, 102, 0.7);
+  }
+
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
+}
+
+@layer components {
+  /* Welcome + loader: a dusk sky, dark where the text sits so cream copy stays readable. */
+  .bg-twilight {
+    background:
+      radial-gradient(120% 60% at 50% 105%, rgba(255, 190, 224, 0.9) 0%, rgba(255, 190, 224, 0) 60%),
+      linear-gradient(180deg, #241446 0%, #4b3190 45%, #9a6fcf 78%, #f2b3d6 100%);
+  }
+
+  /* Main environment: a soft lavender-to-cream morning. */
+  .bg-dream {
+    background:
+      radial-gradient(70% 50% at 20% 10%, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 70%),
+      radial-gradient(60% 45% at 85% 90%, rgba(255, 209, 227, 0.9) 0%, rgba(255, 209, 227, 0) 70%),
+      linear-gradient(165deg, #cdb8ff 0%, #ecc3ea 48%, #fff0e1 100%);
+  }
+
+  .btn-glow {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: inline-flex;
+    min-height: 3.25rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    padding: 0.9rem 2.1rem;
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .btn-glow-light {
+    color: var(--color-plum);
+    background: linear-gradient(100deg, #ffd1e3 0%, #f9c9ec 50%, #d9c8ff 100%);
+    box-shadow:
+      0 12px 40px -10px rgba(247, 143, 187, 0.9),
+      0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+  }
+
+  .btn-glow-deep {
+    color: #ffffff;
+    background: linear-gradient(100deg, #6d4bb8 0%, #b8559a 100%);
+    box-shadow:
+      0 14px 38px -10px rgba(109, 75, 184, 0.75),
+      0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+  }
+
+  .btn-glow:hover {
+    box-shadow:
+      0 16px 52px -8px rgba(247, 143, 187, 1),
+      0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  }
+
+  .btn-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: shimmer 4.2s ease-in-out 1.2s infinite;
+    pointer-events: none;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 10px 40px -12px rgba(59, 36, 102, 0.35);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+}
+
+/* ---------- Phase 5: letter + music player ---------- */
+.font-hand {
+  font-family: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+}
+
+.music-disc {
+  background: conic-gradient(from 0deg, #f78fbb, #d9c8ff, #ffd1e3, #9b7ad8, #f78fbb);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.55);
+  animation: disc-spin 7s linear infinite;
+}
+@keyframes disc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.eq {
+  display: inline-flex;
+  height: 0.8rem;
+  align-items: flex-end;
+  gap: 2px;
+}
+.eq i {
+  display: block;
+  width: 3px;
+  height: 30%;
+  border-radius: 2px;
+  background: #9b7ad8;
+}
+.eq-on i {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+.eq-on i:nth-child(2) { animation-delay: -0.3s; }
+.eq-on i:nth-child(3) { animation-delay: -0.6s; }
+.eq-on i:nth-child(4) { animation-delay: -0.15s; }
+@keyframes eq-bounce {
+  0%, 100% { height: 25%; }
+  50% { height: 100%; }
+}
+
+.vol-range {
+  --fill: 60%;
+  height: 1.5rem;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+}
+.vol-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #9b7ad8 var(--fill), rgba(59, 36, 102, 0.18) var(--fill));
+}
+.vol-range::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(59, 36, 102, 0.18);
+}
+.vol-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background: #9b7ad8;
+}
+.vol-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #3b2466;
+  box-shadow: 0 2px 8px rgba(59, 36, 102, 0.4);
+}
+.vol-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #3b2466;
+}
+
+.letter-paper {
+  --lh: 2.1rem;
+  font-size: 1.5rem;
+  line-height: var(--lh);
+  color: #4a2c5e;
+  background-color: #fffaf3;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--lh) - 1px), rgba(247, 143, 187, 0.28) calc(var(--lh) - 1px), rgba(247, 143, 187, 0.28) var(--lh));
+  background-position: 0 1.2rem;
+}
+@media (min-width: 640px) {
+  .letter-paper {
+    --lh: 2.4rem;
+    font-size: 1.75rem;
+  }
+}
+.typewriter-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: #f78fbb;
+  animation: caret-blink 0.9s steps(1) infinite;
+}
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .music-disc, .eq-on i, .typewriter-caret { animation: none; }
+}

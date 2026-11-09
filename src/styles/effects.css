@@ -1,0 +1,269 @@
+/* Decorative effect primitives. Counts and positions come from React; motion lives here. */
+
+/* ── Stars ─────────────────────────────────────────────── */
+.fx-star {
+  position: absolute;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.3;
+  animation: twinkle var(--dur, 4s) ease-in-out var(--delay, 0s) infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+/* ── Glowing particles ─────────────────────────────────── */
+.fx-orb {
+  position: absolute;
+  bottom: -12%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 214, 236, 0.55) 35%,
+    rgba(255, 214, 236, 0) 70%
+  );
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: orb-rise var(--dur, 16s) linear var(--delay, 0s) infinite;
+}
+
+@keyframes orb-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(var(--drift, 30px), -55vh, 0) scale(1);
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(calc(var(--drift, 30px) * -0.5), -115vh, 0) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* ── Falling petals ────────────────────────────────────── */
+.fx-petal {
+  position: absolute;
+  top: 0;
+  border-radius: 80% 0 80% 0;
+  background: linear-gradient(135deg, var(--c1, #ffd1e3), var(--c2, #f78fbb));
+  box-shadow: inset -2px -2px 5px rgba(255, 255, 255, 0.35);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: petal-fall var(--dur, 16s) linear var(--delay, 0s) infinite;
+}
+
+@keyframes petal-fall {
+  0% {
+    transform: translate3d(0, -12vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  25% {
+    transform: translate3d(var(--sway, 40px), 24vh, 0) rotate(110deg);
+  }
+  50% {
+    transform: translate3d(calc(var(--sway, 40px) * -0.7), 52vh, 0) rotate(230deg);
+  }
+  75% {
+    transform: translate3d(calc(var(--sway, 40px) * 0.8), 82vh, 0) rotate(330deg);
+  }
+  100% {
+    transform: translate3d(0, 112vh, 0) rotate(440deg);
+    opacity: 0;
+  }
+}
+
+/* ── Butterflies ───────────────────────────────────────── */
+.fx-wing {
+  transform-box: fill-box;
+  animation: flap var(--flap, 0.7s) ease-in-out infinite alternate;
+}
+
+.fx-wing-l {
+  transform-origin: 100% 50%;
+}
+
+.fx-wing-r {
+  transform-origin: 0% 50%;
+}
+
+@keyframes flap {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0.22);
+  }
+}
+
+/* ── Soft lights ───────────────────────────────────────── */
+.fx-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  opacity: 0.55;
+  animation: blob-drift var(--dur, 20s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+
+@keyframes blob-drift {
+  from {
+    transform: translate3d(-4%, -3%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(5%, 4%, 0) scale(1.15);
+  }
+}
+
+.fx-ray {
+  position: absolute;
+  top: -20%;
+  width: max(14vw, 7rem);
+  height: 140%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+  filter: blur(22px);
+  transform-origin: top center;
+  rotate: var(--rot, 0deg);
+  opacity: 0.35;
+  animation: ray-pulse var(--dur, 8s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+
+@keyframes ray-pulse {
+  from {
+    opacity: 0.2;
+    transform: rotate(-2deg);
+  }
+  to {
+    opacity: 0.55;
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes shimmer {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+/* ── Reduced motion: keep the scene, drop the movement ── */
+@media (prefers-reduced-motion: reduce) {
+  .fx-petal,
+  .fx-orb {
+    display: none;
+  }
+
+  .fx-star {
+    animation: none;
+    opacity: 0.75;
+  }
+
+  .fx-wing,
+  .fx-blob,
+  .fx-ray,
+  .btn-glow::after {
+    animation: none;
+  }
+}
+
+/* ── Gallery: honest "working…" bar (no fake percentages) ── */
+.progress-indeterminate {
+  position: relative;
+}
+.progress-indeterminate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, #ffd1e3, transparent);
+  animation: progress-slide 1.4s ease-in-out infinite;
+}
+@keyframes progress-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
+/* ── Cinematic overlay text ── */
+.text-shimmer {
+  background: linear-gradient(100deg, #fff 0%, #ffd1e3 30%, #d9c8ff 55%, #fff 80%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 5s linear infinite;
+}
+@keyframes text-shimmer {
+  to { background-position: -200% center; }
+}
+.text-shimmer-dark {
+  background: linear-gradient(100deg, #3b2466 0%, #b8559a 35%, #6d4bb8 65%, #3b2466 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-indeterminate::after, .text-shimmer, .text-shimmer-dark { animation: none; }
+}
+
+/* ── Gallery: floating flowers and hearts ── */
+.fx-float {
+  position: absolute;
+  bottom: -10%;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: float-up var(--dur, 22s) linear var(--delay, 0s) infinite;
+}
+@keyframes float-up {
+  0% { transform: translate3d(0, 0, 0) rotate(var(--r0, -10deg)) scale(0.8); opacity: 0; }
+  12% { opacity: 0.75; }
+  50% { transform: translate3d(var(--drift, 30px), -55vh, 0) rotate(calc(var(--r0, -10deg) * -1)) scale(1); }
+  88% { opacity: 0.6; }
+  100% { transform: translate3d(calc(var(--drift, 30px) * -0.6), -115vh, 0) rotate(var(--r0, -10deg)) scale(0.9); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-float { display: none; }
+}
+
+/* ── Slideshow: little sparkles when a new photo appears ── */
+.spark-pop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin: -0.35rem 0 0 -0.35rem;
+  background: radial-gradient(circle, #fff 0 25%, #ffd1e3 45%, rgba(255, 209, 227, 0) 70%);
+  border-radius: 9999px;
+  opacity: 0;
+  animation: spark-pop 1.1s ease-out forwards;
+}
+@keyframes spark-pop {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.2); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.4) rotate(120deg); }
+}
+@media (prefers-reduced-motion: reduce) { .spark-pop { animation: none; opacity: 0; } }
