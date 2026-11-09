@@ -6,13 +6,13 @@ export const birthdayConfig = {
   name: "Muskan",
 
   // Her birthday celebration date. Shown as text only: no age is calculated anywhere.
-  birthday: { dateLabel: "10 November" },
+  birthday: { dateLabel: "10 November 2026" },
 
   // Personal details card (final screen).
   person: {
     name: "Muskan",
-    dateOfBirth: "20 November 2002",
-    celebration: "10 November",
+    dateOfBirth: "10 November 2002",
+    celebration: "10 November 2026",
     wishesFrom: "Ajay",
   },
 
@@ -23,7 +23,7 @@ export const birthdayConfig = {
 
   welcome: {
     greeting: "Hey Muskan! ❤️",
-    subtitle: "Someone has created a little magical world just for you...",
+    subtitle: "Someone has created a little magical world just for you... on 24th birthday",
     button: "Let's Begin",
   },
 

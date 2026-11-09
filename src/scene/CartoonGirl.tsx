@@ -1,6 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, type MutableRefObject, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
 import { DoubleSide, type Group } from "three";
+import { AnimeEye, Brow } from "./faceParts";
+import { blouseTexture, floralSkirt, hairTexture } from "./paint";
 import type { Sim } from "./layout";
 import { softDotTexture } from "./textures";
 
@@ -24,16 +26,21 @@ interface CartoonGirlProps {
   sim: Sim;
 }
 
-const SKIN = "#ffdcc4";
-const HAIR = "#4b2e28";
-const DRESS = "#ffb6d3";
-const DRESS_DARK = "#f48fb9";
-const WHITE = "#fffaf5";
+// Colours taken from Muskan's reference photo.
+const SKIN = "#f1c9aa";
+const BLACK = "#1c1921";
+const GOLD = "#d9b25f";
+const PEARL = "#fff8ee";
+const SHOE = "#eadbcf";
+const IRIS = "#4a2d22";
 
 /**
- * An original cartoon girl built as a jointed rig (hips → torso → head, shoulders → elbows,
- * hips → legs). Blinking, breathing and the walk cycle run here every frame; the story
- * beats (waving, blowing candles, cutting cake) are rotations the GSAP timeline applies to the joints.
+ * Muskan: an original, hand-painted-style anime character built as a jointed rig
+ * (hips → torso → head, shoulders → elbows, hips → legs). Her look follows her reference photo:
+ * long straight black hair with a centre parting, jhumka earrings, red lips, a black embroidered
+ * blouse with sheer puffed sleeves, a pearl belt buckle and a long blush floral skirt.
+ * Blinking, breathing and the walk cycle run here; the story beats are rotations the GSAP
+ * timeline applies to the joints, so the skeleton below must not change.
  */
 export default function CartoonGirl({ rig, sim }: CartoonGirlProps) {
   const root = useRef<Group>(null);
@@ -51,10 +58,20 @@ export default function CartoonGirl({ rig, sim }: CartoonGirlProps) {
   const eyeR = useRef<Group>(null);
   const smile = useRef<Group>(null);
   const mouthO = useRef<Group>(null);
+  const hairBack = useRef<Group>(null);
   const blinkTimer = useRef(2);
   const blinkT = useRef(0);
   const walkPhase = useRef(0);
   const dot = useMemo(() => softDotTexture(), []);
+  const tex = useMemo(
+    () => ({
+      cap: hairTexture("muskan-cap", "#100e14", "#28232e", "#625b6b", { part: false, band: 0.5 }),
+      long: hairTexture("muskan-long", "#15111a", "#2b2431", "#615770", { band: 0.12 }),
+      skirt: floralSkirt(),
+      blouse: blouseTexture(),
+    }),
+    [],
+  );
 
   useLayoutEffect(() => {
     rig.current = {
@@ -96,70 +113,89 @@ export default function CartoonGirl({ rig, sim }: CartoonGirlProps) {
     mouthO.current!.visible = blowing;
     smile.current!.scale.setScalar(sim.smileScale);
 
-    // Walk cycle.
+    // Walk cycle, with hip sway, a counter-turn of the shoulders and long hair that swings.
+    let hairSwing = Math.sin(t * 1.3) * 0.02;
     if (sim.walking) {
       walkPhase.current += step * 8.5;
       const s = Math.sin(walkPhase.current);
       legL.current!.rotation.x = s * 0.7;
       legR.current!.rotation.x = -s * 0.7;
       body.current!.position.y = Math.abs(Math.cos(walkPhase.current)) * 0.05;
+      body.current!.rotation.y = s * 0.06;
+      body.current!.rotation.z = Math.cos(walkPhase.current) * 0.02;
+      torso.current!.rotation.y = -s * 0.08;
+      hairSwing += Math.abs(s) * 0.07;
       if (sim.swingArms) {
         armL.current!.rotation.x = -s * 0.55;
         armR.current!.rotation.x = s * 0.55;
       }
     } else {
       body.current!.position.y *= 0.8;
+      body.current!.rotation.y *= 0.8;
+      body.current!.rotation.z *= 0.8;
+      torso.current!.rotation.y *= 0.8;
     }
+    hairBack.current!.rotation.x += (hairSwing - hairBack.current!.rotation.x) * Math.min(1, step * 6);
   });
 
   return (
     <group ref={root}>
       {/* Soft blob shadow on the floor */}
       <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
-        <planeGeometry args={[1.25, 1.25]} />
+        <planeGeometry args={[1.35, 1.35]} />
         <meshBasicMaterial map={dot} color="#3b2466" transparent opacity={0.4} depthWrite={false} />
       </mesh>
 
       <group ref={body}>
-        {/* Legs */}
+        {/* Legs (mostly hidden under the long skirt) */}
         <Leg groupRef={legL} x={-0.1} />
         <Leg groupRef={legR} x={0.1} />
 
-        {/* Skirt */}
-        <mesh position={[0, 0.62, 0]}>
-          <cylinderGeometry args={[0.17, 0.41, 0.46, 40, 1, true]} />
-          <meshStandardMaterial color={DRESS} roughness={0.55} side={DoubleSide} />
+        {/* Long floral skirt */}
+        <mesh position={[0, 0.485, 0]}>
+          <cylinderGeometry args={[0.17, 0.47, 0.73, 48, 1, true]} />
+          <meshStandardMaterial map={tex.skirt} roughness={0.6} side={DoubleSide} />
         </mesh>
-        <mesh position={[0, 0.405, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.4, 0.035, 10, 48]} />
-          <meshStandardMaterial color={WHITE} roughness={0.5} />
-        </mesh>
-        <mesh position={[0, 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.345, 0.022, 8, 48]} />
-          <meshStandardMaterial color={DRESS_DARK} roughness={0.5} />
+        <mesh position={[0, 0.125, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.468, 0.011, 8, 56]} />
+          <meshStandardMaterial color="#f3e3d6" roughness={0.5} />
         </mesh>
 
         {/* Torso (pivot at the waist) */}
         <group ref={torso} position={[0, 0.85, 0]}>
+          {/* Black embroidered blouse */}
           <mesh position={[0, 0.15, 0]}>
             <cylinderGeometry args={[0.15, 0.19, 0.31, 32]} />
-            <meshStandardMaterial color={DRESS} roughness={0.55} />
+            <meshStandardMaterial map={tex.blouse} roughness={0.55} />
           </mesh>
+          {/* Black belt with a pearl-and-gold buckle */}
           <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.19, 0.03, 10, 36]} />
-            <meshStandardMaterial color={DRESS_DARK} roughness={0.4} />
+            <torusGeometry args={[0.19, 0.034, 10, 36]} />
+            <meshStandardMaterial color="#141217" roughness={0.4} />
           </mesh>
+          <group position={[0, 0.012, 0.215]}>
+            <mesh>
+              <sphereGeometry args={[0.034, 14, 12]} />
+              <meshStandardMaterial color={PEARL} roughness={0.25} />
+            </mesh>
+            {Array.from({ length: 8 }, (_, i) => (
+              <mesh key={i} position={[Math.cos((i * Math.PI) / 4) * 0.05, Math.sin((i * Math.PI) / 4) * 0.05, -0.004]}>
+                <sphereGeometry args={[0.012, 8, 6]} />
+                <meshStandardMaterial color={GOLD} metalness={0.7} roughness={0.35} />
+              </mesh>
+            ))}
+          </group>
+          {/* Scoop neckline: a ring of skin and a neck */}
           <mesh position={[0, 0.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.13, 0.03, 10, 32]} />
-            <meshStandardMaterial color={WHITE} roughness={0.5} />
+            <torusGeometry args={[0.12, 0.032, 10, 32]} />
+            <meshStandardMaterial color={SKIN} roughness={0.7} />
           </mesh>
-          {/* Little heart button */}
-          <mesh position={[0, 0.17, 0.17]}>
-            <sphereGeometry args={[0.022, 12, 10]} />
-            <meshStandardMaterial color="#fff" roughness={0.3} />
+          <mesh position={[0, 0.34, 0]}>
+            <cylinderGeometry args={[0.052, 0.058, 0.12, 20]} />
+            <meshStandardMaterial color={SKIN} roughness={0.7} />
           </mesh>
 
-          <Arm side={-1} upper={armL} fore={foreL}>
+          <Arm side={-1} upper={armL} fore={foreL} accessory="watch">
             <group ref={knife} position={[0, -0.22, 0.02]} visible={false}>
               <mesh position={[0, -0.03, 0]}>
                 <boxGeometry args={[0.032, 0.1, 0.032]} />
@@ -171,99 +207,101 @@ export default function CartoonGirl({ rig, sim }: CartoonGirlProps) {
               </mesh>
             </group>
           </Arm>
-          <Arm side={1} upper={armR} fore={foreR} />
+          <Arm side={1} upper={armR} fore={foreR} accessory="bangles" />
 
           {/* Head (pivot at the neck) */}
           <group ref={head} position={[0, 0.3, 0]}>
-            <group position={[0, 0.26, 0]}>
-              <mesh scale={[1, 0.97, 0.97]}>
-                <sphereGeometry args={[0.26, 40, 32]} />
-                <meshStandardMaterial color={SKIN} roughness={0.7} />
+            {/* Slightly smaller head for natural proportions */}
+            <group position={[0, 0.25, 0]} scale={0.86}>
+              <mesh scale={[0.94, 1.035, 0.91]}>
+                <sphereGeometry args={[0.26, 56, 40]} />
+                <meshStandardMaterial color={SKIN} roughness={0.48} metalness={0.015} />
               </mesh>
 
-              {/* Hair: back shell, fringe cap, side locks, pigtails, bow */}
-              <mesh position={[0, 0.0, -0.02]} scale={[1, 1.04, 1]}>
-                <sphereGeometry args={[0.285, 36, 28, Math.PI, Math.PI]} />
-                <meshStandardMaterial color={HAIR} roughness={0.55} side={DoubleSide} />
+              {/* Hair: deep side-swept crown, long dark curtain down the back and face-framing locks */}
+              <mesh>
+                <sphereGeometry args={[0.285, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.44]} />
+                <meshStandardMaterial map={tex.cap} roughness={0.42} metalness={0.08} />
               </mesh>
-              <mesh position={[0, 0, 0]}>
-                <sphereGeometry args={[0.285, 36, 20, 0, Math.PI * 2, 0, Math.PI * 0.42]} />
-                <meshStandardMaterial color={HAIR} roughness={0.55} />
+              <mesh position={[0, 0, -0.02]} scale={[1, 1.02, 1]}>
+                <sphereGeometry args={[0.285, 36, 28, Math.PI, Math.PI, Math.PI * 0.2, Math.PI * 0.5]} />
+                <meshStandardMaterial map={tex.cap} roughness={0.42} metalness={0.08} side={DoubleSide} />
               </mesh>
-              {[-1, 1].map((s) => (
-                <group key={s}>
-                  <mesh position={[s * 0.245, -0.08, 0.04]} rotation={[0, 0, s * 0.12]}>
-                    <capsuleGeometry args={[0.04, 0.17, 4, 10]} />
-                    <meshStandardMaterial color={HAIR} roughness={0.55} />
-                  </mesh>
-                  <group position={[s * 0.275, 0.0, -0.07]}>
-                    <mesh>
-                      <sphereGeometry args={[0.075, 14, 12]} />
-                      <meshStandardMaterial color={HAIR} roughness={0.55} />
-                    </mesh>
-                    <mesh position={[s * 0.035, -0.19, 0]} rotation={[0, 0, s * 0.22]}>
-                      <capsuleGeometry args={[0.065, 0.2, 4, 12]} />
-                      <meshStandardMaterial color={HAIR} roughness={0.55} />
-                    </mesh>
-                    <mesh position={[0, -0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                      <torusGeometry args={[0.06, 0.016, 8, 20]} />
-                      <meshStandardMaterial color="#f78fbb" roughness={0.4} />
-                    </mesh>
-                  </group>
-                </group>
-              ))}
-              <group position={[0.12, 0.25, 0.1]} rotation={[-0.4, 0, -0.35]}>
-                <mesh position={[-0.055, 0, 0]} rotation={[0, 0, 0.35]} scale={[1.4, 0.85, 0.5]}>
-                  <sphereGeometry args={[0.05, 14, 10]} />
-                  <meshStandardMaterial color="#f78fbb" roughness={0.4} />
-                </mesh>
-                <mesh position={[0.055, 0, 0]} rotation={[0, 0, -0.35]} scale={[1.4, 0.85, 0.5]}>
-                  <sphereGeometry args={[0.05, 14, 10]} />
-                  <meshStandardMaterial color="#f78fbb" roughness={0.4} />
-                </mesh>
-                <mesh>
-                  <sphereGeometry args={[0.026, 12, 10]} />
-                  <meshStandardMaterial color="#ffd1e3" roughness={0.4} />
+              {/* Soft side-swept fringe: a layered lock rather than a rigid centre-part cartoon cap */}
+              <mesh position={[-0.075, 0.155, 0.185]} rotation={[0.08, 0.02, -0.48]} scale={[1.35, 0.52, 0.72]}>
+                <sphereGeometry args={[0.12, 28, 18]} />
+                <meshStandardMaterial map={tex.cap} roughness={0.34} metalness={0.035} />
+              </mesh>
+              <group ref={hairBack}>
+                <mesh position={[0, -0.37, 0]}>
+                  <cylinderGeometry args={[0.285, 0.3, 0.85, 40, 12, true, Math.PI * 0.62, Math.PI * 0.76]} />
+                  <meshStandardMaterial map={tex.long} roughness={0.42} metalness={0.08} side={DoubleSide} />
                 </mesh>
               </group>
-
-              {/* Face */}
               {[-1, 1].map((s) => (
-                <group key={s} ref={s < 0 ? eyeL : eyeR} position={[s * 0.095, -0.015, 0.232]}>
-                  <mesh scale={[0.8, 1.15, 0.5]}>
-                    <sphereGeometry args={[0.052, 20, 16]} />
-                    <meshStandardMaterial color="#2a1a2e" roughness={0.15} metalness={0.1} />
+                <group key={s}>
+                  {/* hair framing the face, falling over the shoulders */}
+                  <mesh position={[s * 0.222, -0.2, 0.07]} rotation={[0, 0, s * 0.05]} scale={[0.8, 1, 0.8]}>
+                    <capsuleGeometry args={[0.042, 0.4, 4, 12]} />
+                    <meshStandardMaterial map={tex.long} roughness={0.42} metalness={0.08} />
                   </mesh>
-                  <mesh position={[0.014, 0.022, 0.024]}>
-                    <sphereGeometry args={[0.014, 10, 8]} />
-                    <meshBasicMaterial color="#ffffff" toneMapped={false} />
-                  </mesh>
-                  <mesh position={[-0.012, -0.018, 0.022]}>
-                    <sphereGeometry args={[0.007, 8, 6]} />
-                    <meshBasicMaterial color="#ffffff" toneMapped={false} />
+                  <mesh position={[s * 0.19, 0.06, 0.1]} rotation={[0, 0, s * 0.35]}>
+                    <capsuleGeometry args={[0.04, 0.12, 4, 10]} />
+                    <meshStandardMaterial map={tex.long} roughness={0.36} metalness={0.035} />
                   </mesh>
                 </group>
               ))}
+
+              {/* Jhumka (chandelier) earrings */}
+              {[-1, 1].map((s) => (
+                <group key={s} position={[s * 0.255, -0.085, 0.045]}>
+                  <mesh>
+                    <sphereGeometry args={[0.017, 10, 8]} />
+                    <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} />
+                  </mesh>
+                  <mesh position={[0, -0.05, 0]} rotation={[Math.PI, 0, 0]}>
+                    <coneGeometry args={[0.04, 0.06, 18, 1, true]} />
+                    <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} side={DoubleSide} />
+                  </mesh>
+                  {[-0.022, 0, 0.022].map((x) => (
+                    <mesh key={x} position={[x, -0.092, 0]}>
+                      <sphereGeometry args={[0.011, 8, 6]} />
+                      <meshStandardMaterial color={PEARL} roughness={0.25} />
+                    </mesh>
+                  ))}
+                </group>
+              ))}
+
+              {/* Face: almond eyes (modest size), slim arched brows */}
+              <AnimeEye groupRef={eyeL} side={-1} iris={IRIS} size={0.95} />
+              <AnimeEye groupRef={eyeR} side={1} iris={IRIS} size={0.95} />
+              <Brow side={-1} color="#1a1014" radius={0.0055} length={0.07} tilt={-0.1} />
+              <Brow side={1} color="#1a1014" radius={0.0055} length={0.07} tilt={-0.1} />
               {[-1, 1].map((s) => (
                 <mesh key={s} position={[s * 0.165, -0.07, 0.195]} scale={[1, 0.6, 0.25]}>
                   <sphereGeometry args={[0.048, 14, 10]} />
-                  <meshStandardMaterial color="#ff9db8" transparent opacity={0.6} roughness={1} />
+                  <meshStandardMaterial color="#ff9db8" transparent opacity={0.5} roughness={1} />
                 </mesh>
               ))}
-              <mesh position={[0, -0.05, 0.258]}>
-                <sphereGeometry args={[0.014, 10, 8]} />
-                <meshStandardMaterial color="#f2bfa3" roughness={0.8} />
+              <mesh position={[0, -0.018, 0.244]} scale={[0.44, 1.25, 0.4]}>
+                <sphereGeometry args={[0.016, 18, 14]} />
+                <meshStandardMaterial color="#e7b69b" roughness={0.52} />
               </mesh>
+              <mesh position={[0, -0.05, 0.258]}>
+                <sphereGeometry args={[0.014, 16, 12]} />
+                <meshStandardMaterial color="#e9b89b" roughness={0.55} />
+              </mesh>
+              {/* Red lips */}
               <group ref={smile} position={[0, -0.095, 0.245]} rotation={[0, 0, Math.PI]}>
                 <mesh>
-                  <torusGeometry args={[0.045, 0.0085, 8, 24, Math.PI]} />
-                  <meshStandardMaterial color="#c4506f" roughness={0.6} />
+                  <torusGeometry args={[0.045, 0.0105, 8, 24, Math.PI]} />
+                  <meshStandardMaterial color="#c42a45" roughness={0.45} />
                 </mesh>
               </group>
               <group ref={mouthO} position={[0, -0.1, 0.245]} visible={false}>
                 <mesh scale={[1, 1.2, 0.4]}>
                   <sphereGeometry args={[0.026, 14, 10]} />
-                  <meshStandardMaterial color="#b83e5e" roughness={0.7} />
+                  <meshStandardMaterial color="#b01f3a" roughness={0.6} />
                 </mesh>
               </group>
             </group>
@@ -281,13 +319,14 @@ function Leg({ groupRef, x }: { groupRef: MutableRefObject<Group | null>; x: num
         <capsuleGeometry args={[0.05, 0.2, 4, 10]} />
         <meshStandardMaterial color={SKIN} roughness={0.7} />
       </mesh>
-      <mesh position={[0, -0.27, 0]}>
-        <cylinderGeometry args={[0.054, 0.054, 0.12, 14]} />
-        <meshStandardMaterial color={WHITE} roughness={0.8} />
-      </mesh>
+      {/* Embellished heels */}
       <mesh position={[0, -0.385, 0.035]} scale={[1, 0.7, 1.45]}>
         <sphereGeometry args={[0.075, 16, 12]} />
-        <meshStandardMaterial color="#f78fbb" roughness={0.35} />
+        <meshStandardMaterial color={SHOE} roughness={0.35} />
+      </mesh>
+      <mesh position={[0, -0.372, 0.075]}>
+        <sphereGeometry args={[0.014, 8, 6]} />
+        <meshStandardMaterial color={PEARL} roughness={0.25} />
       </mesh>
     </group>
   );
@@ -297,30 +336,64 @@ interface ArmProps {
   side: 1 | -1;
   upper: MutableRefObject<Group | null>;
   fore: MutableRefObject<Group | null>;
+  accessory: "watch" | "bangles";
   children?: ReactNode;
 }
 
-/** Shoulder → elbow → hand. `side` −1 is her left arm (the one nearest the camera at the cake). */
-function Arm({ side, upper, fore, children }: ArmProps) {
+/** Shoulder → elbow → hand, in sheer black puffed sleeves. `side` −1 is her left arm (the one holding the knife). */
+function Arm({ side, upper, fore, accessory, children }: ArmProps) {
   return (
     <group ref={upper} position={[side * 0.21, 0.27, 0]} rotation={[0, 0, side * 0.12]}>
       <mesh>
         <sphereGeometry args={[0.085, 16, 12]} />
-        <meshStandardMaterial color={DRESS} roughness={0.55} />
+        <meshStandardMaterial color={BLACK} roughness={0.55} />
       </mesh>
       <mesh position={[0, -0.15, 0]}>
         <capsuleGeometry args={[0.042, 0.16, 4, 10]} />
         <meshStandardMaterial color={SKIN} roughness={0.7} />
+      </mesh>
+      {/* sheer sleeve over the upper arm */}
+      <mesh position={[0, -0.15, 0]}>
+        <capsuleGeometry args={[0.054, 0.16, 4, 12]} />
+        <meshStandardMaterial color={BLACK} transparent opacity={0.5} roughness={0.6} depthWrite={false} />
       </mesh>
       <group ref={fore} position={[0, -0.27, 0]}>
         <mesh position={[0, -0.09, 0]}>
           <capsuleGeometry args={[0.039, 0.11, 4, 10]} />
           <meshStandardMaterial color={SKIN} roughness={0.7} />
         </mesh>
+        {/* puffed sheer sleeve gathered at a cuff */}
+        <mesh position={[0, -0.06, 0]} scale={[1, 1.15, 1]}>
+          <sphereGeometry args={[0.063, 16, 12]} />
+          <meshStandardMaterial color={BLACK} transparent opacity={0.5} roughness={0.6} depthWrite={false} />
+        </mesh>
+        <mesh position={[0, -0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.044, 0.011, 8, 20]} />
+          <meshStandardMaterial color={BLACK} roughness={0.5} />
+        </mesh>
         <mesh position={[0, -0.21, 0]}>
           <sphereGeometry args={[0.055, 14, 10]} />
           <meshStandardMaterial color={SKIN} roughness={0.7} />
         </mesh>
+        {accessory === "watch" ? (
+          <group position={[0, -0.178, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.046, 0.007, 8, 20]} />
+              <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 0, 0.047]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.01, 16]} />
+              <meshStandardMaterial color="#f6ecd4" metalness={0.5} roughness={0.3} />
+            </mesh>
+          </group>
+        ) : (
+          [-0.175, -0.195].map((y) => (
+            <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.046, 0.005, 8, 20]} />
+              <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.28} />
+            </mesh>
+          ))
+        )}
         {children}
       </group>
     </group>
